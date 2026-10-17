@@ -1,0 +1,31 @@
+name: Verify project
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [22, 24]
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Rebuild workflow and report HTML
+        run: |
+          node scripts/build-workflow.js
+          node scripts/build-report.js
+      - name: Run automated tests
+        run: node --test
+      - name: Confirm generated files match source
+        run: git diff --exit-code -- student-reports.n8n.json examples/report-preview.html docs/PROJECT_REPORT.html

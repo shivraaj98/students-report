@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>College Project Report - Student Progress Reporting</title>
+<style>
+@page{size:A4;margin:20mm 18mm 20mm 22mm;@bottom-center{content:counter(page);font:10pt Georgia,serif;color:#55646b}}
+*{box-sizing:border-box}body{margin:0 auto;max-width:900px;padding:42px 44px;background:#fff;color:#192d38;font:16px/1.65 Georgia,'Times New Roman',serif}
+h1,h2,h3{font-family:Arial,sans-serif;color:#164c47;line-height:1.3}h1{font-size:34px;margin:48px 0 32px;border-top:7px solid #164c47;padding-top:28px}h2{font-size:25px;margin:54px 0 22px;padding-bottom:9px;border-bottom:1px solid #b9cdc7}h3{font-size:18px;margin:25px 0 10px}
+p{margin:12px 0;text-align:justify}a{color:#17615c;text-decoration:underline;overflow-wrap:anywhere}table{border-collapse:collapse;width:100%;font:13px/1.5 Arial,sans-serif;margin:20px 0;table-layout:fixed}th,td{border:1px solid #c7d5cf;padding:9px 10px;text-align:left;vertical-align:top;overflow-wrap:anywhere}th{background:#e7f0ed;color:#164c47}tr:nth-child(even) td{background:#f7faf8}
+code{font:12px/1.5 Consolas,monospace;background:#f0f4f2;padding:1px 3px;overflow-wrap:anywhere}pre{background:#f0f4f2;padding:14px;border-left:3px solid #82a99c;white-space:pre-wrap;overflow-wrap:anywhere}pre code{padding:0;background:none}img{display:block;max-width:100%;height:auto;margin:20px auto}li{margin:7px 0}strong{font-weight:700}
+.print-note{font:12px/1.6 Arial,sans-serif;background:#edf4f1;padding:12px 16px;border-radius:5px}
+@media print{body{max-width:none;padding:0;font-size:11pt;line-height:1.55}h1{font-size:27pt;margin-top:25mm}h2{break-before:page;margin-top:0;font-size:19pt}h3{font-size:13pt;break-after:avoid}p,li{orphans:3;widows:3}table{font-size:9pt}tr{break-inside:avoid}thead{display:table-header-group}img,pre{break-inside:avoid}a{color:inherit}.print-note{display:none}}
+</style></head><body>
+<aside class="print-note">Editable source: PROJECT_REPORT.md. Complete the bracketed cover details before submission. Use your browser's Print command to save a PDF.</aside>
+<h1 id="student-progress-reporting-using-n8n-and-whatsapp-drafts">Student Progress Reporting Using n8n and WhatsApp Drafts</h1>
+<p><strong>College Project Report</strong></p>
+<table><thead><tr><th>Submission detail</th><th>To be completed by the student</th></tr></thead><tbody>
+<tr><td>Submitted by</td><td>[Student name]</td></tr>
+<tr><td>Roll / registration number</td><td>[Roll number]</td></tr>
+<tr><td>Programme / course</td><td>[Programme and course]</td></tr>
+<tr><td>Department</td><td>[Department name]</td></tr>
+<tr><td>College / university</td><td>[Institution name]</td></tr>
+<tr><td>Project supervisor</td><td>[Supervisor name]</td></tr>
+<tr><td>Academic year / semester</td><td>[Academic year and semester]</td></tr>
+<tr><td>Submission date</td><td>[Submission date]</td></tr>
+</tbody></table>
+<p><strong>Implementation:</strong> n8n, JavaScript, CSV, HTML/CSS, and Docker Compose.</p>
+<p><strong>Verification recorded:</strong> 17 October 2026.</p>
+<p><strong>Submission note:</strong> Replace all bracketed identification fields before submission. This document reports the implemented system and observed tests; it does not assert a signed declaration, supervisor approval, or an institution-specific certification.</p>
+<h2 id="abstract">Abstract</h2>
+<p>Regular communication between a teacher and parents requires combining student identity, homework completion, examination results, and teacher observations into clear individual messages. Repeating this work manually can lead to inconsistent formatting, omitted information, or a report being associated with the wrong student. This project implements a structured reporting workflow that prepares separate student progress messages from a teacher-supplied CSV file.</p>
+<p>The teacher enters the school, class, teacher name, and reporting period in an n8n form and uploads records for up to 45 students. Built-in n8n nodes extract the CSV, execute a dependency-free JavaScript report engine, and display a teacher-only review page. The engine validates the batch, preserves student-to-parent mapping, calculates pending homework, reproduces recorded exam results and concerns, and prepares an individual WhatsApp click-to-chat draft link when a parent number is supplied. The teacher verifies the recipient and sends each message inside WhatsApp.</p>
+<p>The implementation uses deterministic templates rather than a language model because the required facts are already structured. Blank academic data is explicitly reported as Not recorded. Automated verification comprises 21 passing tests, including full 45-student mapping, malformed input rejection, output escaping, Unicode preservation, and execution of the exact embedded workflow code. A live n8n 2.43.7 run accepted the two-student example CSV and displayed two correct report cards. The example phone numbers were intentionally blank, so no WhatsApp links were created and no messages were sent.</p>
+<p>The resulting prototype demonstrates repeatable report preparation and explicit teacher review. It does not provide unattended sending, delivery confirmation, historical student records, or evidence of measured workload reduction.</p>
+<p><strong>Keywords:</strong> n8n, workflow automation, student progress, CSV validation, JavaScript, parent communication, WhatsApp drafts.</p>
+<h2 id="contents">Contents</h2>
+<ol>
+<li>Introduction</li>
+<li>Problem statement and objectives</li>
+<li>Requirements and scope</li>
+<li>System analysis and design</li>
+<li>Data design and validation</li>
+<li>Implementation</li>
+<li>Testing and verification</li>
+<li>Results and discussion</li>
+<li>Data handling and operational considerations</li>
+<li>Limitations and future work</li>
+<li>Conclusion</li>
+<li>References</li>
+<li>Appendix: installation and demonstration</li>
+</ol>
+<p>The repository also includes an installation/user guide, architecture notes, a detailed test record, and a demonstration/viva guide.</p>
+<h2 id="1-introduction">1. Introduction</h2>
+<h3 id="1-1-background">1.1 Background</h3>
+<p>Teachers often keep homework completion counts, marks, and observations in spreadsheets. Parent communication requires turning these records into individual messages that identify the student, summarize the current period, and explain any requested support. Even when the information already exists, repeatedly copying it into separate chats requires attention to both content and recipient.</p>
+<p>Workflow automation can connect data collection, validation, processing, and presentation. In this project, n8n supplies the teacher form and execution environment, while a JavaScript module implements explicit reporting rules. The final action remains under teacher control: the system opens an addressed draft, and the teacher presses Send in WhatsApp.</p>
+<h3 id="1-2-project-motivation">1.2 Project motivation</h3>
+<p>The project explores a practical automation problem with a small, testable scope. Its primary concern is reliable transformation of supplied facts. It avoids generating judgments about a student that were not present in the teacher's records. It also makes incomplete records visible rather than silently replacing them with zero marks or statements that no concerns exist.</p>
+<h3 id="1-3-proposed-solution">1.3 Proposed solution</h3>
+<p>The solution accepts one class CSV and four form settings. It validates the full batch before preparing reports, renders one review card per student, and creates one optional chat link per record. A shared source module is embedded into the importable workflow by a builder script, allowing local tests to exercise the same logic that runs in n8n.</p>
+<p>The repository contains the runnable workflow, local runtime configuration, fictional sample data, tests, an offline preview, and the documentation needed to reproduce the demonstration.</p>
+<h2 id="2-problem-statement-and-objectives">2. Problem statement and objectives</h2>
+<h3 id="2-1-problem-statement">2.1 Problem statement</h3>
+<p>Prepare individual parent-facing progress reports from structured teacher records while preserving student identity, recorded academic facts, and recipient details. Identify invalid or incomplete data before a teacher opens the reports for sending.</p>
+<h3 id="2-2-objectives">2.2 Objectives</h3>
+<ul>
+<li>Accept teacher metadata and one UTF-8 CSV upload through a web form.</li>
+<li>Process a class of 1–45 students and create a separate named report for each.</li>
+<li>Include homework, recorded examination results, teacher concerns, and optional parent support requests.</li>
+<li>Validate required fields, unique IDs, CSV shape, phone formatting, and homework consistency.</li>
+<li>Display each student's ID, parent details, complete message, and phone readiness on a review page.</li>
+<li>Open an individual WhatsApp draft when a phone number is supplied.</li>
+<li>Keep final recipient verification and sending as explicit teacher actions.</li>
+<li>Provide reproducible workflow generation, automated tests, and a documented demonstration.</li>
+</ul>
+<h3 id="2-3-expected-contribution">2.3 Expected contribution</h3>
+<p>The project contributes an implemented reporting workflow and an explicit validation approach for a small class batch. Its educational value includes data transformation, workflow orchestration, input validation, web output handling, reproducible builds, and boundary-aware verification. It does not claim a novel messaging protocol or an evaluated improvement in educational outcomes.</p>
+<h3 id="2-4-success-criteria">2.4 Success criteria</h3>
+<p>The prototype is successful when a valid sample upload produces correctly separated reports, invalid records fail with actionable errors, the exported workflow contains the tested engine, and missing phones do not create contact links. Real-world delivery requires a separate recipient-assisted check and is not part of the observed result.</p>
+<h2 id="3-requirements-and-scope">3. Requirements and scope</h2>
+<h3 id="3-1-functional-requirements">3.1 Functional requirements</h3>
+<table><thead><tr><th>ID</th><th>Requirement</th><th>Implemented behavior</th></tr></thead><tbody>
+<tr><td>FR1</td><td>Collect reporting context</td><td>Required school, class, teacher, and reporting period.</td></tr>
+<tr><td>FR2</td><td>Accept class records</td><td>One CSV upload with a header and 1–45 nonblank student rows.</td></tr>
+<tr><td>FR3</td><td>Validate the batch</td><td>Stop on invalid settings, headers, rows, IDs, counts, or nonempty phone values.</td></tr>
+<tr><td>FR4</td><td>Generate report content</td><td>One fact-based message per student.</td></tr>
+<tr><td>FR5</td><td>Support incomplete records</td><td>Mark absent academic information Not recorded; disable links for blank phones.</td></tr>
+<tr><td>FR6</td><td>Support recipient review</td><td>Show student and parent details beside each message.</td></tr>
+<tr><td>FR7</td><td>Prepare chat drafts</td><td>Generate encoded click-to-chat URLs for formatted phone numbers.</td></tr>
+<tr><td>FR8</td><td>Keep teacher control</td><td>Require the teacher to open, verify, and send each message.</td></tr>
+</tbody></table>
+<h3 id="3-2-nonfunctional-requirements">3.2 Nonfunctional requirements</h3>
+<p>The engine should be readable, dependency-free, and deterministic. The source and embedded Code node should remain aligned. HTML output should escape dynamic values, and URL encoding should preserve Unicode and punctuation. The runtime should preserve its configuration between container restarts. Repository examples should contain no real student contact information.</p>
+<h3 id="3-3-software-and-hardware-environment">3.3 Software and hardware environment</h3>
+<table><thead><tr><th>Item</th><th>Purpose / observed version</th></tr></thead><tbody>
+<tr><td>Host operating system</td><td>Windows, used for the recorded local demonstration.</td></tr>
+<tr><td>Docker and Compose</td><td>Host the supplied n8n container and named volume.</td></tr>
+<tr><td>n8n</td><td>Pinned image version 2.43.7.</td></tr>
+<tr><td>Node.js</td><td>Version 22.19.0 observed for local verification; repository requires 22 or newer.</td></tr>
+<tr><td>Browser</td><td>Open the teacher form, review output, and optionally WhatsApp Web.</td></tr>
+<tr><td>WhatsApp account</td><td>Needed for real sending; not used in the example run.</td></tr>
+</tbody></table>
+<p>The project was not hardware-benchmarked, so it does not state a measured minimum RAM, CPU, throughput, or response-time guarantee. Docker provides the runtime used by n8n; the host Node installation is used for repository scripts and tests.</p>
+<h3 id="3-4-scope-boundary">3.4 Scope boundary</h3>
+<p>The implementation prepares reports from the current upload. It does not authenticate individual teachers within a separate application, maintain student history, calculate unprovided grades, search unstructured documents, manage WhatsApp sessions, or record delivery events.</p>
+<h2 id="4-system-analysis-and-design">4. System analysis and design</h2>
+<h3 id="4-1-existing-manual-process">4.1 Existing manual process</h3>
+<p>A teacher reads each spreadsheet record, writes or copies a message, locates the parent chat, checks the student and recipient, and sends the report. Repetitive formatting and movement between records create opportunities for omission or mismatching. These are motivating risks; no formal observational study was conducted for this project.</p>
+<h3 id="4-2-proposed-architecture">4.2 Proposed architecture</h3>
+<p><img alt="System architecture and verification boundary" src="assets/workflow.svg"></p>
+<p>The design has four processing nodes: Form Trigger, Extract from File, Code, and Form completion. A fifth sticky-note node contains instructions in the editor and has no processing role. The teacher browser submits inputs to n8n and later opens WhatsApp outside the workflow.</p>
+<h3 id="4-3-data-movement">4.3 Data movement</h3>
+<ol>
+<li>The form collects reporting settings and an uploaded file under <code>student_csv</code>.</li>
+<li>The extraction node decodes CSV rows while retaining the header as the first row.</li>
+<li>The Code node retrieves settings from the form output and rows from all extraction items.</li>
+<li>The engine validates and maps the rows into independent report objects.</li>
+<li>The completion page displays the generated HTML.</li>
+<li>The teacher opens one student-specific draft and sends it in WhatsApp.</li>
+</ol>
+<h3 id="4-4-design-rationale">4.4 Design rationale</h3>
+<p>Keeping the CSV header as data allows duplicate column names to be rejected before object conversion could hide them. Using unique student IDs prevents repeated names from becoming the only identity mechanism. Keeping the student's name, ID, parent, and phone in the same validated record reduces accidental cross-record mapping.</p>
+<p>Batch validation precedes message generation. A bad row produces a correction request rather than a partial class result. Shared parent phone numbers are allowed because siblings may legitimately use the same contact, but the page highlights the case for review.</p>
+<h3 id="4-5-complexity">4.5 Complexity</h3>
+<p>The engine scans records to validate IDs, build reports, count shared phones, and render cards. These passes are linear in the number of records, with output work proportional to the total text length. Report objects and HTML are held in memory for the batch. The implemented 45-student limit and text limits bound the intended input; they are application limits rather than measured infrastructure capacity.</p>
+<h2 id="5-data-design-and-validation">5. Data design and validation</h2>
+<h3 id="5-1-csv-schema">5.1 CSV schema</h3>
+<table><thead><tr><th>Column</th><th>Meaning</th><th>Rule</th></tr></thead><tbody>
+<tr><td><code>student_id</code></td><td>Stable student or roll identifier</td><td>Required, unique ignoring letter case.</td></tr>
+<tr><td><code>student_name</code></td><td>Student name</td><td>Required text.</td></tr>
+<tr><td><code>parent_name</code></td><td>Parent or guardian name</td><td>Optional column and value.</td></tr>
+<tr><td><code>parent_phone</code></td><td>Full international contact number</td><td>Required column; blank disables draft link.</td></tr>
+<tr><td><code>homework_completed</code></td><td>Completed assignments</td><td>Whole number or blank with assigned count.</td></tr>
+<tr><td><code>homework_assigned</code></td><td>Assigned assignments</td><td>Whole number or blank with completed count.</td></tr>
+<tr><td><code>exam_results</code></td><td>Recorded subject results</td><td>Text; semicolons/newlines separate subjects.</td></tr>
+<tr><td><code>teacher_concerns</code></td><td>Recorded observations</td><td>Text; blank means Not recorded.</td></tr>
+<tr><td><code>parent_action</code></td><td>Requested parent support</td><td>Optional column and value.</td></tr>
+</tbody></table>
+<h3 id="5-2-validation-rules">5.2 Validation rules</h3>
+<p>All columns except <code>parent_name</code> and <code>parent_action</code> must be present. Headers may be reordered. Missing required, duplicate, and unknown headers are rejected. A UTF-8 byte-order mark and surrounding header whitespace are handled. Completely blank rows are ignored; other rows must have the expected cell count.</p>
+<p>Student names, IDs, and parent names are limited to 120 characters. Reporting settings are required and limited to 160 characters each. Results, concerns, and parent actions are limited to 1,000 characters each. Unsupported control characters are rejected.</p>
+<p>Both homework counts must be present or both absent. Present values must be nonnegative whole numbers, and completed work cannot exceed assigned work. The pending value is assigned minus completed. Zero assigned and zero completed means no homework was assigned; missing counts do not mean zero.</p>
+<p>The phone parser removes supported formatting and a leading international prefix. It then requires 8–15 digits starting with a nonzero digit. This verifies the implementation's format rule only. It cannot prove the country code is appropriate, establish who owns a number, or determine whether WhatsApp is registered.</p>
+<h3 id="5-3-report-output-structure">5.3 Report output structure</h3>
+<p>The result contains <code>student_count</code>, <code>ready_count</code>, <code>reports</code>, and <code>html</code>. Each report includes student ID/name, parent name/phone, message, <code>whatsapp_url</code>, and a status of <code>ready_for_review</code> or <code>missing_phone</code>. These statuses describe preparation only and never indicate successful sending.</p>
+<h2 id="6-implementation">6. Implementation</h2>
+<h3 id="6-1-report-engine">6.1 Report engine</h3>
+<p>The engine resides in <code>src/report-engine.js</code>. <code>buildReports(table, settings)</code> is its entry point. Helpers normalize text, validate phone formatting and homework counts, parse the table, create student records, prepare messages, escape HTML, and render the review page.</p>
+<p>Messages include a title, school/class/period, greeting, student name and ID, homework summary, exam results, teacher concerns, optional support request, and teacher sign-off. Recorded results are reproduced as supplied. No model invents advice or converts scores into grades not present in the input.</p>
+<h3 id="6-2-workflow-generation">6.2 Workflow generation</h3>
+<p><code>scripts/build-workflow.js</code> reads the engine source and embeds it directly into the n8n Code node. It writes <code>student-reports.n8n.json</code> and an anonymized offline preview. The JSON starts inactive so importing it elsewhere does not automatically expose a live form.</p>
+<p>The Code node reads the form settings using the form node name and gathers each extraction item's <code>json.row</code>. The completion node renders the engine's <code>html</code> output. The tests verify these connections and run the exact exported code with n8n-shaped objects.</p>
+<h3 id="6-3-whatsapp-draft-preparation">6.3 WhatsApp draft preparation</h3>
+<p>A nonblank validated parent number produces a URL with the structure <code>https://wa.me/&lt;number&gt;?text=&lt;encoded message&gt;</code>. The engine uses <code>encodeURIComponent</code> for the message. Unicode names, newlines, and characters such as ampersands must survive decoding back to the original message. Click-to-chat behavior is described by the official WhatsApp reference [1].</p>
+<p>The link is a draft launcher. Opening it does not send the message. The application has no WhatsApp API credential, message queue, or callback that could report delivery.</p>
+<h3 id="6-4-html-handling">6.4 HTML handling</h3>
+<p>Dynamic settings and student values are escaped before insertion into the review HTML. This prevents supplied markup from becoming executable HTML in the generated page. A shared-phone notice appears when more than one record has the same nonblank phone number. Missing phones show an explanatory prompt instead of an active link.</p>
+<h3 id="6-5-local-runtime-and-reproducibility">6.5 Local runtime and reproducibility</h3>
+<p><code>compose.yaml</code> pins n8n 2.43.7, binds the host port to localhost, and persists data in <code>n8n_data</code>. The source repository has no runtime npm dependencies. Node.js built-in modules provide the builder and test runner. A separate report builder converts this Markdown document into printable HTML and optionally uses a local browser to save PDF.</p>
+<h2 id="7-testing-and-verification">7. Testing and verification</h2>
+<h3 id="7-1-verification-approach">7.1 Verification approach</h3>
+<p>Testing combines a dependency-free automated suite with an observed hosted execution. The suite covers report behavior and export consistency. The integration run covers actual CSV extraction and completion rendering in n8n. These layers support different claims and should not be confused with successful WhatsApp delivery.</p>
+<h3 id="7-2-automated-results">7.2 Automated results</h3>
+<p>Run <code>node scripts/build-workflow.js</code> followed by <code>node --test</code>. On the recorded verification date, all <strong>21 tests passed</strong>, with zero failures or skips, using Node.js 22.19.0.</p>
+<table><thead><tr><th>Test area</th><th>Acceptance checked</th><th>Result</th></tr></thead><tbody>
+<tr><td>Message content</td><td>Correct names, counts, marks, concerns, and support text</td><td>Passed</td></tr>
+<tr><td>Class mapping</td><td>All 45 students remain associated with their own record</td><td>Passed</td></tr>
+<tr><td>Batch boundaries</td><td>46 records rejected; no silent truncation</td><td>Passed</td></tr>
+<tr><td>Identity and schema</td><td>Missing/duplicate IDs and invalid headers rejected</td><td>Passed</td></tr>
+<tr><td>Academic counts</td><td>Missing pairs, fractions, negatives, impossible totals rejected</td><td>Passed</td></tr>
+<tr><td>Optional data</td><td>Missing facts explicit; blank phones produce drafts without links</td><td>Passed</td></tr>
+<tr><td>Encoding and output</td><td>Unicode preserved; HTML escaped</td><td>Passed</td></tr>
+<tr><td>Export execution</td><td>Exact embedded Code node runs with n8n-shaped inputs</td><td>Passed</td></tr>
+<tr><td>Offline example</td><td>Fictional students and no contact links</td><td>Passed</td></tr>
+</tbody></table>
+<h3 id="7-3-live-integration-procedure">7.3 Live integration procedure</h3>
+<p>The workflow was imported and published in a local Docker-hosted n8n 2.43.7 instance. Its production form accepted a multipart upload containing <code>examples/students.csv</code> and the settings Example School, 6 A, Example Teacher, and Example week. The execution returned a result address, and the generated completion page was retrieved and checked.</p>
+<p>The result contained two separate report cards and message blocks. Checks confirmed Aarav/STU001/Parent One and Sita/STU002/Parent Two, different homework summaries, and the respective mathematics results of 38/50 and 46/50. Both phone fields were blank, and the page contained zero WhatsApp links.</p>
+<h3 id="7-4-verification-limits">7.4 Verification limits</h3>
+<p>The 45-student case was tested in the engine, not through a hosted 45-row upload. No real parent number, WhatsApp send action, delivery receipt, multi-user deployment, load benchmark, or school-based user study was observed. The repository test record documents these boundaries in more detail.</p>
+<h2 id="8-results-and-discussion">8. Results and discussion</h2>
+<h3 id="8-1-example-output">8.1 Example output</h3>
+<table><thead><tr><th>Student</th><th>Parent</th><th>Homework</th><th>Mathematics</th><th>Draft link</th></tr></thead><tbody>
+<tr><td>Aarav (example), STU001</td><td>Parent One</td><td>4/5 complete; 1 pending</td><td>38/50</td><td>Disabled: phone blank</td></tr>
+<tr><td>Sita (example), STU002</td><td>Parent Two</td><td>5/5 complete; 0 pending</td><td>46/50</td><td>Disabled: phone blank</td></tr>
+</tbody></table>
+<p>The two records produced separate progress messages and maintained the correct parent association. The review page exposed the missing-phone condition rather than inventing contacts or enabling invalid links. The offline preview can be opened from <code>examples/report-preview.html</code> to inspect the same report presentation without starting n8n.</p>
+<h3 id="8-2-interpretation">8.2 Interpretation</h3>
+<p>The results show that the implemented path can collect form settings, extract uploaded records, validate them, and display individual reports in the observed environment. The automated suite adds evidence for boundary cases and mapping across 45 students. It does not establish operational reliability under every input, deployment, or browser configuration.</p>
+<p>Deterministic generation is appropriate for this scope because the desired output is a consistent presentation of recorded facts. A retrieval or generative model stage would add components without addressing a demonstrated requirement. Human verification remains necessary because correct software mapping cannot establish that a supplied phone number belongs to the intended parent.</p>
+<h3 id="8-3-deliverables">8.3 Deliverables</h3>
+<p>The deliverables are the importable workflow, engine source, builder scripts, Docker configuration, sample CSV, offline preview, 21-test suite, architecture diagram, user guide, verification record, demo/viva guide, and project report in editable Markdown, browser-readable HTML, and PDF formats.</p>
+<h2 id="9-data-handling-and-operational-considerations">9. Data handling and operational considerations</h2>
+<h3 id="9-1-student-data">9.1 Student data</h3>
+<p>Student records, marks, concerns, and parent phone numbers should be handled only for the intended reporting purpose. This repository contains fictional example records with blank contacts. Real class files should remain outside the repository or in its ignored <code>private/</code> directory.</p>
+<p>The project does not create a separate student database, but n8n may retain uploaded files, submissions, and generated output in execution storage. Local execution therefore does not mean that data is never stored. Operators need appropriate account access, retention settings, and backup practices for actual use.</p>
+<h3 id="9-2-recipient-and-disclosure-checks">9.2 Recipient and disclosure checks</h3>
+<p>The class review page is for the teacher because it contains multiple students. Parents should receive only their own student's report. Shared contact numbers are flagged, and each chat recipient must be checked inside WhatsApp before sending. Draft links also contain the message text, so they should be treated as student information when copied or shared.</p>
+<h3 id="9-3-runtime-boundary">9.3 Runtime boundary</h3>
+<p>The supplied Compose binding makes n8n available on the host computer's localhost interface. Remote use requires a separate deployment decision and configuration for HTTPS and form access control. The source upload to GitHub does not deploy the workflow or publish a hosted teacher portal.</p>
+<p>Runtime captures, signed result URLs, credentials, <code>.env</code> files, logs, and n8n databases are excluded from source control. The workflow export contains no account credentials and is inactive on import.</p>
+<h2 id="10-limitations-and-future-work">10. Limitations and future work</h2>
+<h3 id="10-1-implemented-limitations">10.1 Implemented limitations</h3>
+<ul>
+<li>A batch is limited to 45 students and starts from a fresh CSV.</li>
+<li>No student history, database synchronization, or cross-period trend analysis is implemented.</li>
+<li>Phone validation checks formatting, not recipient identity or WhatsApp registration.</li>
+<li>Sending requires teacher review and an action inside WhatsApp.</li>
+<li>Sent, delivered, and read statuses are not available to the workflow.</li>
+<li>The live demonstration used two fictional records with blank phones.</li>
+<li>Remote, concurrent, mobile, and high-volume operation has not been evaluated.</li>
+<li>No empirical timing or teacher-workload improvement is claimed.</li>
+</ul>
+<h3 id="10-2-proposed-extensions">10.2 Proposed extensions</h3>
+<p>Future work could add configurable class limits, an authenticated teacher portal, a historical record store, language-specific templates, retention controls, and more hosted integration scenarios. Any automated messaging extension should be designed around an explicitly authorized official integration and validated delivery events. These are proposed changes rather than completed features.</p>
+<p>Further evaluation could compare teacher preparation time using a defined manual baseline, test representative school spreadsheets, assess usability with consenting participants, and verify real draft delivery with a consenting recipient. Such evaluation would support stronger conclusions than the current technical demonstration alone.</p>
+<h2 id="11-conclusion">11. Conclusion</h2>
+<p>The project implements a reproducible n8n workflow for preparing individual student progress reports from structured teacher records. Its JavaScript engine validates the full class batch, preserves student-to-parent association, presents missing information explicitly, and prepares optional WhatsApp drafts while leaving the final sending action under teacher control.</p>
+<p>Twenty-one automated tests passed, and a live local n8n execution generated the expected two-student reports from the example upload. The observed result supports the report-preparation path. It does not establish WhatsApp delivery or production readiness for a school deployment.</p>
+<p>The implementation provides a practical college project demonstrating workflow orchestration, data validation, deterministic message generation, HTML handling, and reproducible verification. The repository documentation and editable report support further development and a transparent project demonstration.</p>
+<h2 id="12-references">12. References</h2>
+<p>References identify the technologies and behaviors used in the project. Implementation and test outcomes are supported by the repository source, test suite, and recorded local execution rather than by external documentation.</p>
+<ol>
+<li>WhatsApp Help Center. <a href="https://faq.whatsapp.com/5913398998672934">How to use click to chat</a>. Accessed 17 October 2026.</li>
+<li>n8n documentation. <a href="https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.formtrigger/">Form Trigger node</a>. Accessed 17 October 2026.</li>
+<li>n8n documentation. <a href="https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.form/">Form node</a>.</li>
+<li>n8n documentation. <a href="https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.extractfromfile/">Extract from File node</a>.</li>
+<li>n8n documentation. <a href="https://docs.n8n.io/hosting/installation/docker/">Docker installation</a>. Accessed 17 October 2026. See its Docker Compose installation link for the recommended installation path.</li>
+<li>n8n documentation. <a href="https://docs.n8n.io/hosting/cli-commands/">Server CLI commands</a>. Accessed 17 October 2026.</li>
+<li>Project source. <code>src/report-engine.js</code>, <code>scripts/build-workflow.js</code>, and <code>student-reports.n8n.json</code>.</li>
+<li>Project verification. <code>tests/report-engine.test.js</code> and <code>docs/TESTING.md</code>.</li>
+</ol>
+<h2 id="13-appendix-installation-and-demonstration">13. Appendix: installation and demonstration</h2>
+<h3 id="a-start-the-local-runtime">A. Start the local runtime</h3>
+<pre><code>docker compose up -d</code></pre>
+<p>Open <code>http://localhost:5678</code>, complete the owner setup if needed, import <code>student-reports.n8n.json</code>, and save the workflow.</p>
+<h3 id="b-demonstrate-the-example">B. Demonstrate the example</h3>
+<p>Execute the workflow and open the teacher form, or use the published local production form. Enter Example School, 6 A, Example Teacher, and Example week; upload <code>examples/students.csv</code>; submit and compare both student reports. Explain that blank phone numbers deliberately disable the draft links.</p>
+<h3 id="c-reproduce-local-tests">C. Reproduce local tests</h3>
+<pre><code>node scripts/build-workflow.js
+node --test</code></pre>
+<h3 id="d-regenerate-this-report">D. Regenerate this report</h3>
+<pre><code>node scripts/build-report.js
+node scripts/build-report.js --pdf</code></pre>
+<p>The PDF command requires a local Chrome or Edge installation. Alternatively, print the generated HTML to PDF through the browser. Fill in the cover details in the Markdown source first.</p>
+<h3 id="e-stop-without-removing-stored-n8n-data">E. Stop without removing stored n8n data</h3>
+<pre><code>docker compose stop</code></pre>
+<p>For presentation timing and questions, see <code>docs/DEMO_AND_VIVA.md</code>. For detailed installation and troubleshooting, see <code>docs/USER_GUIDE.md</code>.</p>
+</body></html>

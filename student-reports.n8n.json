@@ -1,0 +1,173 @@
+{
+  "name": "Class reports - individual WhatsApp drafts (up to 45 students)",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Prepare parent reports",
+        "formDescription": "Upload one class CSV (maximum 45 students). Review personalised homework, exam, and teacher concern messages before opening each parent's WhatsApp chat.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "School name",
+              "fieldName": "school_name",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Class / section",
+              "fieldName": "class_name",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Teacher name",
+              "fieldName": "teacher_name",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Reporting period",
+              "fieldName": "report_period",
+              "fieldType": "text",
+              "placeholder": "For example: Week 3, Term 1",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Student records (CSV)",
+              "fieldName": "student_csv",
+              "fieldType": "file",
+              "acceptFileTypes": ".csv",
+              "multipleFiles": false,
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {
+          "path": "class-parent-reports",
+          "buttonLabel": "Prepare reports",
+          "useWorkflowTimezone": true
+        }
+      },
+      "id": "7c821f8f-1212-4f1f-bf99-886d34b4c492",
+      "name": "Teacher details and student CSV",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.4,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "e9de0fa5-dc5f-4328-a784-7413156321ad"
+    },
+    {
+      "parameters": {
+        "operation": "csv",
+        "binaryPropertyName": "student_csv",
+        "options": {
+          "headerRow": false,
+          "includeEmptyCells": true,
+          "encoding": "utf8",
+          "enableBOM": true,
+          "delimiter": ","
+        }
+      },
+      "id": "da41e29d-b583-42b0-a783-344fd5ad4cb1",
+      "name": "Read student CSV",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        300,
+        0
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "'use strict';\n\n// Kept dependency-free so the same code runs in n8n's JavaScript Code node.\nconst MAX_STUDENTS = 45;\nconst CSV_COLUMNS = [\n  'student_id', 'student_name', 'parent_name', 'parent_phone',\n  'homework_completed', 'homework_assigned', 'exam_results',\n  'teacher_concerns', 'parent_action',\n];\nconst REQUIRED_COLUMNS = CSV_COLUMNS.filter(\n  (column) => !['parent_name', 'parent_action'].includes(column),\n);\n\nfunction text(value, label, { required = false, limit = 1000, multiline = true } = {}) {\n  if (value !== null && value !== undefined && !['string', 'number'].includes(typeof value)) {\n    throw new Error(`${label} must be text.`);\n  }\n  const result = String(value ?? '').replace(/\\r\\n?/g, '\\n').trim();\n  if (required && !result) throw new Error(`${label} is required.`);\n  if (result.length > limit) throw new Error(`${label} exceeds ${limit} characters.`);\n  if ((!multiline && /[\\n\\t]/.test(result)) || /[\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f\\u007f]/.test(result)) {\n    throw new Error(`${label} contains an unsupported control character.`);\n  }\n  return result;\n}\n\nfunction phoneNumber(value, label) {\n  let number = text(value, label, { limit: 40, multiline: false });\n  if (!number) return '';\n  // Country codes are supplied by the teacher, never inferred from a location.\n  if (!/^(?:\\+|00)?[0-9 ()\\-.]+$/.test(number)) {\n    throw new Error(`${label}: use a full international number with its country code.`);\n  }\n  number = number.replace(/[+ ()\\-.]/g, '');\n  if (number.startsWith('00')) number = number.slice(2);\n  if (!/^[1-9][0-9]{7,14}$/.test(number)) {\n    throw new Error(`${label}: use 8-15 digits including the country code, without a local leading zero.`);\n  }\n  return number;\n}\n\nfunction homeworkCount(value, label) {\n  const input = text(value, label, { limit: 12, multiline: false });\n  if (!input) return null;\n  if (!/^[0-9]+$/.test(input) || !Number.isSafeInteger(Number(input))) {\n    throw new Error(`${label} must be a whole number of zero or more.`);\n  }\n  return Number(input);\n}\n\nfunction parseTable(table) {\n  if (!Array.isArray(table) || !Array.isArray(table[0])) {\n    throw new Error('Upload a CSV with a header row and 1-45 students.');\n  }\n  const headers = table[0].map((header) => text(\n    String(header ?? '').replace(/^\\uFEFF/, ''), 'CSV header',\n    { required: true, limit: 80, multiline: false },\n  ));\n  if (new Set(headers).size !== headers.length) {\n    throw new Error('The CSV has duplicate column names. Each column must appear once.');\n  }\n  const missing = REQUIRED_COLUMNS.filter((column) => !headers.includes(column));\n  if (missing.length) throw new Error(`Missing CSV columns: ${missing.join(', ')}.`);\n  const unknown = headers.filter((column) => !CSV_COLUMNS.includes(column));\n  if (unknown.length) throw new Error(`Unknown CSV columns: ${unknown.join(', ')}. Use the supplied template.`);\n\n  const rows = [];\n  table.slice(1).forEach((row, index) => {\n    if (!Array.isArray(row)) throw new Error(`CSV row ${index + 2} is not a record.`);\n    if (row.every((cell) => String(cell ?? '').trim() === '')) return;\n    if (row.length !== headers.length) {\n      throw new Error(`CSV row ${index + 2} has ${row.length} cells; expected ${headers.length}.`);\n    }\n    rows.push({ rowNumber: index + 2, fields: Object.fromEntries(headers.map((key, i) => [key, row[i]])) });\n  });\n  if (!rows.length) throw new Error('The CSV contains no students. Add 1-45 student rows.');\n  if (rows.length > MAX_STUDENTS) throw new Error(`Found ${rows.length} students; the class limit is ${MAX_STUDENTS}.`);\n  return rows;\n}\n\nfunction studentRecord({ fields, rowNumber }) {\n  const prefix = `CSV row ${rowNumber}`;\n  const single = { limit: 120, multiline: false };\n  const student = {\n    student_id: text(fields.student_id, `${prefix}: student_id`, { ...single, required: true }),\n    student_name: text(fields.student_name, `${prefix}: student_name`, { ...single, required: true }),\n    parent_name: text(fields.parent_name, `${prefix}: parent_name`, single),\n    parent_phone: phoneNumber(fields.parent_phone, `${prefix}: parent_phone`),\n    homework_completed: homeworkCount(fields.homework_completed, `${prefix}: homework_completed`),\n    homework_assigned: homeworkCount(fields.homework_assigned, `${prefix}: homework_assigned`),\n    exam_results: text(fields.exam_results, `${prefix}: exam_results`),\n    teacher_concerns: text(fields.teacher_concerns, `${prefix}: teacher_concerns`),\n    parent_action: text(fields.parent_action, `${prefix}: parent_action`),\n  };\n  if ((student.homework_completed === null) !== (student.homework_assigned === null)) {\n    throw new Error(`${prefix}: enter both homework counts, or leave both blank if not recorded.`);\n  }\n  if (student.homework_completed !== null && student.homework_completed > student.homework_assigned) {\n    throw new Error(`${prefix}: completed homework cannot exceed assigned homework.`);\n  }\n  return student;\n}\n\nfunction messageFor(student, settings) {\n  let homework = 'Not recorded.';\n  if (student.homework_assigned === 0) homework = 'No homework assigned for this period.';\n  else if (student.homework_assigned !== null) {\n    homework = `Completed ${student.homework_completed}/${student.homework_assigned} assignments. `\n      + `Pending: ${student.homework_assigned - student.homework_completed}.`;\n  }\n  const exams = student.exam_results\n    ? student.exam_results.split(/;|\\n/).map((line) => line.trim()).filter(Boolean).join('\\n')\n    : 'Not recorded.';\n  const sections = [\n    '*Student progress report*',\n    `${settings.school_name}\\nClass: ${settings.class_name}\\nPeriod: ${settings.report_period}`,\n    `Dear ${student.parent_name || 'Parent / Guardian'},`,\n    `*Student:* ${student.student_name}\\n*Student ID:* ${student.student_id}`,\n    `*Homework*\\n${homework}`,\n    `*Exam results*\\n${exams}`,\n    `*Teacher concerns*\\n${student.teacher_concerns || 'Not recorded.'}`,\n  ];\n  if (student.parent_action) sections.push(`*Parent support requested*\\n${student.parent_action}`);\n  sections.push(`Regards,\\n${settings.teacher_name}\\nClass teacher`);\n  return sections.join('\\n\\n');\n}\n\nfunction escapeHtml(value) {\n  return String(value).replace(/[&<>\"']/g, (character) => ({\n    '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;',\n  })[character]);\n}\n\nfunction reviewHtml(reports, settings) {\n  const ready = reports.filter((report) => report.whatsapp_url).length;\n  const phoneCounts = new Map();\n  reports.forEach((report) => {\n    if (report.parent_phone) phoneCounts.set(report.parent_phone, (phoneCounts.get(report.parent_phone) || 0) + 1);\n  });\n  const cards = reports.map((report, index) => {\n    const shared = (phoneCounts.get(report.parent_phone) || 0) > 1\n      ? '<p class=\"notice\">This parent number is shared by multiple students. Check the student name before sending.</p>' : '';\n    const action = report.whatsapp_url\n      ? `<a class=\"open-chat\" href=\"${escapeHtml(report.whatsapp_url)}\" target=\"_blank\" rel=\"noopener noreferrer\">Open WhatsApp for ${escapeHtml(report.student_name)}</a>`\n      : '<p class=\"notice\">Add this parent\\'s full international number to parent_phone in the CSV to enable WhatsApp.</p>';\n    return `<article>\n      <div class=\"card-heading\"><span class=\"number\">${index + 1}</span><div>\n        <h2>${escapeHtml(report.student_name)}</h2><p class=\"meta\">${escapeHtml(report.student_id)} &middot; ${escapeHtml(report.parent_name || 'Parent / Guardian')}${report.parent_phone ? ` &middot; +${escapeHtml(report.parent_phone)}` : ''}</p>\n      </div><span class=\"badge\">${report.whatsapp_url ? 'Ready for review' : 'Phone needed'}</span></div>\n      <pre>${escapeHtml(report.message)}</pre>${shared}${action}\n    </article>`;\n  }).join('\\n');\n\n  return `<!doctype html>\n<html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<meta name=\"referrer\" content=\"no-referrer\"><title>Parent reports - ${escapeHtml(settings.class_name)}</title>\n<style>\n*{box-sizing:border-box}body{margin:0;background:#f1f5f4;color:#172b27;font:16px/1.55 system-ui,sans-serif}\nmain{max-width:900px;margin:0 auto;padding:32px 20px 64px}header{margin-bottom:28px}h1{font-size:30px;line-height:1.2;margin:8px 0}\nh2{font-size:20px;margin:0}.eyebrow{color:#286656;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px}\n.subtitle,.meta{color:#4b625c}.meta{font-size:14px;margin:3px 0}.instructions{padding:16px 20px;background:#e2efea;border-radius:12px}\narticle{background:white;border:1px solid #d7e1dd;border-radius:16px;padding:24px;margin:20px 0;break-inside:avoid}\n.card-heading{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.number{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:#e6efeb;font-weight:700}\n.badge{margin-left:auto;background:#edf3f0;border-radius:20px;padding:5px 10px;font-size:12px;color:#285546}\npre{font:15px/1.65 system-ui,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere;background:#f7faf8;padding:20px;border-radius:10px;margin:20px 0}\n.open-chat{display:inline-block;text-decoration:none;color:white;background:#146c50;padding:12px 18px;border-radius:8px;font-weight:600}\n.open-chat:focus-visible{outline:3px solid #172b27;outline-offset:4px}.open-chat:hover{background:#0b513b}.notice{color:#7a4219;background:#fff3df;padding:12px 16px;border-radius:8px}\nfooter{font-size:14px;color:#4b625c}@media(max-width:540px){main{padding:20px 12px}article{padding:16px}.badge{margin-left:50px}pre{padding:14px}.open-chat{display:block;text-align:center}}\n@media print{body{background:white}main{max-width:none;padding:0}.open-chat{display:none}article{border-color:#aaa}}\n</style></head><body><main>\n<header><div class=\"eyebrow\">${escapeHtml(settings.school_name)}</div><h1>Reports for class ${escapeHtml(settings.class_name)}</h1>\n<p class=\"subtitle\">${escapeHtml(settings.report_period)} &middot; ${reports.length} student reports &middot; ${ready} WhatsApp links ready</p>\n<div class=\"instructions\"><strong>Review and send one report at a time.</strong><br>Open the student's WhatsApp link, verify the parent and message, then press <strong>Send</strong> in WhatsApp. Opening a link does not send the message or confirm delivery.</div>\n${ready < reports.length ? `<p class=\"notice\">${reports.length - ready} report(s) need a parent phone number. Update the CSV and submit it again.</p>` : ''}</header>\n${cards}\n<footer>Prepared from the teacher's records. Blank results or concerns mean “Not recorded”. Only each individual report should be sent to its parent. You can print or save this page for your own records.</footer>\n</main></body></html>`;\n}\n\nfunction buildReports(table, rawSettings = {}) {\n  const settings = {};\n  for (const key of ['school_name', 'class_name', 'teacher_name', 'report_period']) {\n    settings[key] = text(rawSettings[key], key, { required: true, limit: 160, multiline: false });\n  }\n  const students = parseTable(table).map(studentRecord);\n  const ids = new Set();\n  for (const student of students) {\n    const id = student.student_id.toLowerCase();\n    if (ids.has(id)) throw new Error(`Duplicate student_id: ${student.student_id}. Each student needs a unique ID.`);\n    ids.add(id);\n  }\n  const reports = students.map((student) => {\n    const message = messageFor(student, settings);\n    return {\n      student_id: student.student_id,\n      student_name: student.student_name,\n      parent_name: student.parent_name,\n      parent_phone: student.parent_phone,\n      status: student.parent_phone ? 'ready_for_review' : 'missing_phone',\n      message,\n      whatsapp_url: student.parent_phone\n        ? `https://wa.me/${student.parent_phone}?text=${encodeURIComponent(message)}` : '',\n    };\n  });\n  return {\n    student_count: reports.length,\n    ready_count: reports.filter((report) => report.whatsapp_url).length,\n    reports,\n    html: reviewHtml(reports, settings),\n  };\n}\n\n// The export is only used by local tests and the workflow builder.\nif (typeof module !== 'undefined' && module.exports) {\n  module.exports = { buildReports, CSV_COLUMNS, MAX_STUDENTS };\n}\n\n\nconst settings = $('Teacher details and student CSV').first().json;\nconst table = $input.all().map((item) => item.json.row);\nreturn [{ json: buildReports(table, settings) }];\n"
+      },
+      "id": "ccecb2ca-4425-4740-b634-7e7681bc55de",
+      "name": "Validate and prepare individual reports",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        600,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "={{ $json.html }}"
+      },
+      "id": "96aaf327-0dc3-4e99-af10-5d1137201b45",
+      "name": "Review reports and open WhatsApp",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.3,
+      "position": [
+        900,
+        0
+      ],
+      "webhookId": "2dbe72ea-085d-4a4d-894f-a561257b845e"
+    },
+    {
+      "parameters": {
+        "content": "## How to use\n1. Execute workflow and open the teacher form.\n2. Enter teacher details and upload examples/students.csv or your own CSV (up to 45).\n3. Review each message and open its individual WhatsApp link.\n4. Press Send in WhatsApp.\n\nExample phone numbers are intentionally blank. Supply actual parent numbers with country codes. This workflow prepares drafts; it does not send or track delivery.",
+        "width": 680,
+        "height": 320
+      },
+      "id": "22f3c9cb-3442-46b7-898e-3d6fd7740cf9",
+      "name": "Instructions",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        100,
+        -400
+      ]
+    }
+  ],
+  "connections": {
+    "Teacher details and student CSV": {
+      "main": [
+        [
+          {
+            "node": "Read student CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read student CSV": {
+      "main": [
+        [
+          {
+            "node": "Validate and prepare individual reports",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate and prepare individual reports": {
+      "main": [
+        [
+          {
+            "node": "Review reports and open WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Kathmandu"
+  },
+  "active": false,
+  "pinData": {},
+  "tags": []
+}

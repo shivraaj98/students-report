@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="460" viewBox="0 0 1100 460" role="img" aria-labelledby="title desc">
+  <title id="title">Student progress reporting architecture</title>
+  <desc id="desc">Teacher metadata and CSV flow through n8n extraction, validation, message generation and review. A teacher opens an individual WhatsApp draft and sends it manually.</desc>
+  <defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="none" stroke="#35655a" stroke-width="1.5"/></marker></defs>
+  <rect width="1100" height="460" rx="18" fill="#f3f7f6"/>
+  <g font-family="Arial, sans-serif" fill="#193c35">
+    <text x="40" y="46" font-size="24" font-weight="700">Student progress reports</text>
+    <text x="40" y="74" font-size="15">n8n prepares individual drafts from the teacher's records</text>
+    <rect x="40" y="106" width="1020" height="180" rx="14" fill="#e5eeeb" stroke="#b9ccc5"/>
+    <text x="61" y="132" font-size="13" font-weight="700">LOCAL n8n WORKFLOW</text>
+    <g fill="white" stroke="#b5cdc4"><rect x="60" y="158" width="214" height="95" rx="10"/><rect x="307" y="158" width="214" height="95" rx="10"/><rect x="554" y="158" width="214" height="95" rx="10"/><rect x="801" y="158" width="238" height="95" rx="10"/></g>
+    <g text-anchor="middle"><text x="167" y="190" font-size="17" font-weight="700">Teacher form</text><text x="167" y="216" font-size="13">School, class, teacher, period</text><text x="167" y="235" font-size="13">One CSV, up to 45 students</text><text x="414" y="190" font-size="17" font-weight="700">Extract CSV</text><text x="414" y="216" font-size="13">Preserve headers and rows</text><text x="414" y="235" font-size="13">Decode UTF-8</text><text x="661" y="190" font-size="17" font-weight="700">Validate and prepare</text><text x="661" y="216" font-size="13">Check every student record</text><text x="661" y="235" font-size="13">Build named messages + links</text><text x="920" y="190" font-size="17" font-weight="700">Review page</text><text x="920" y="216" font-size="13">Separate student report cards</text><text x="920" y="235" font-size="13">Verify parent and academic facts</text></g>
+    <g stroke="#35655a" stroke-width="2" marker-end="url(#arrow)"><path d="M275 204H302"/><path d="M522 204H549"/><path d="M769 204H796"/><path d="M920 255V319"/></g>
+    <rect x="570" y="328" width="470" height="78" rx="12" fill="#146c50"/>
+    <text x="805" y="359" fill="white" font-size="17" font-weight="700" text-anchor="middle">WhatsApp: teacher opens draft and presses Send</text>
+    <text x="805" y="385" fill="#e7f3ed" font-size="13" text-anchor="middle">One individual report to its verified parent</text>
+    <text x="60" y="353" font-size="15" font-weight="700">Verification boundary</text><text x="60" y="378" font-size="14">21 automated tests + live two-student form run</text><text x="60" y="400" font-size="14">No automatic sending or delivery tracking</text>
+    <text x="40" y="438" font-size="12" fill="#536d63">Repository data is fictional. Blank parent numbers allow review and disable WhatsApp links.</text>
+  </g>
+</svg>

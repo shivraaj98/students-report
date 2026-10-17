@@ -1,0 +1,14 @@
+{
+  "name": "class-parent-reports-n8n",
+  "version": "1.0.0",
+  "private": true,
+  "description": "An n8n workflow for personalised class reports and individual WhatsApp drafts.",
+  "scripts": {
+    "build": "node scripts/build-workflow.js",
+    "build:report": "node scripts/build-report.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
