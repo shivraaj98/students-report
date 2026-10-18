@@ -6,6 +6,9 @@
   "scripts": {
     "build": "node scripts/build-workflow.js",
     "build:report": "node scripts/build-report.js",
+    "build:web": "node scripts/build-web.js",
+    "start": "node scripts/serve-web.js",
+    "test:browser": "node scripts/check-web-browser.js",
     "test": "node --test"
   },
   "engines": {

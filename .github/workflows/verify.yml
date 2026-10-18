@@ -27,5 +27,7 @@ jobs:
           node scripts/build-report.js
       - name: Run automated tests
         run: node --test
+      - name: Build the live classroom tool
+        run: node scripts/build-web.js
       - name: Confirm generated files match source
         run: git diff --exit-code -- student-reports.n8n.json examples/report-preview.html docs/PROJECT_REPORT.html

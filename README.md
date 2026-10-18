@@ -1,8 +1,20 @@
-# Student reports with n8n and standard WhatsApp
+# Student reports with ClassBridge, n8n, and WhatsApp
 
 **College project · n8n + JavaScript + CSV · Up to 45 students per batch**
 
 [![Verify project](https://github.com/shivraaj98/students-report/actions/workflows/verify.yml/badge.svg)](https://github.com/shivraaj98/students-report/actions/workflows/verify.yml)
+
+## Use the live tool
+
+**[Open ClassBridge — the live classroom tool](https://students-report-shivraaj98.info828588.chatgpt.site)**
+
+Anyone can open the tool in a browser. Set up your class, share a parent registration link in your existing WhatsApp group, verify parents' private replies and permission, and prepare individual student reports. Every report requires your explicit approval before opening the parent's private WhatsApp chat. You then press **Send** in WhatsApp.
+
+The app does not read an existing group's contacts or messages. Parents provide their own details through registration, and the teacher verifies the student-parent match. Class records stay in the teacher's browser; optional device storage and JSON backups are available. Nothing is sent automatically, and delivery is not tracked. See the **[live tool guide](docs/LIVE_TOOL.md)** for the full process, parent opt-out, and data storage details.
+
+To run the tool locally, use `node scripts/build-web.js`, then `node scripts/serve-web.js`, and open `http://127.0.0.1:4173`. No npm installation is required.
+
+## Original n8n workflow
 
 This workflow prepares individual progress messages for a class of **up to 45 students**, using the teacher's homework records, exam results, and concerns. Each message includes the student's name and opens the correct parent's WhatsApp chat with the message prefilled.
 
@@ -12,6 +24,7 @@ This workflow prepares individual progress messages for a class of **up to 45 st
 
 | File | Purpose |
 | --- | --- |
+| [Live tool guide](docs/LIVE_TOOL.md) | Public classroom tool, parent registration, permission, private messages, and backups. |
 | [Project report (PDF)](docs/PROJECT_REPORT.pdf) | Printable college project report. |
 | [Project report (Markdown)](docs/PROJECT_REPORT.md) | Editable report with clearly marked student and college fields. |
 | [Project report (HTML)](docs/PROJECT_REPORT.html) | Browser-readable report; use Print to save a PDF. |
@@ -143,7 +156,7 @@ node scripts/build-workflow.js
 node --test
 ```
 
-`src/report-engine.js` is embedded into the workflow by the builder. Rebuild `student-reports.n8n.json` after changing the engine. All **21 automated tests pass**, including student-to-parent mapping for 45 students, validation, Unicode message links, HTML escaping, and execution of the exact exported Code node with n8n-shaped inputs. The actual hosted form, CSV extraction, Code node, and completion page also passed the two-student example run. Sending to real WhatsApp recipients remains untested.
+`src/report-engine.js` is embedded into the workflow by the builder. Rebuild `student-reports.n8n.json` after changing the engine, and rebuild the website with `node scripts/build-web.js`. All **37 automated tests pass**: 21 cover the original report engine and workflow, and 16 cover the live tool's CSV import, parent registration, consent checks, individual approvals, changes to recipients and content, and backup restoration. The actual n8n form, CSV extraction, Code node, and completion page also passed the original two-student example run. The live tool's desktop and mobile browser checks intercept WhatsApp links and never send messages. Sending to real WhatsApp recipients remains untested.
 
 To regenerate the browser-readable college report after editing its Markdown source:
 
