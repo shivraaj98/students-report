@@ -1,0 +1,8 @@
+{
+  "git.enabled": true,
+  "git.autofetch": true,
+  "git.confirmSync": true,
+  "git.showPushSuccessNotification": true,
+  "git.terminalAuthentication": true,
+  "github.gitAuthentication": true
+}

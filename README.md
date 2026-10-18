@@ -2,7 +2,7 @@
 
 **College project · n8n + JavaScript + CSV · Up to 45 students per batch**
 
-[![Verify project](https://github.com/ankucodes10/student-reports-n8n-whatsapp/actions/workflows/verify.yml/badge.svg)](https://github.com/ankucodes10/student-reports-n8n-whatsapp/actions/workflows/verify.yml)
+[![Verify project](https://github.com/shivraaj98/students-report/actions/workflows/verify.yml/badge.svg)](https://github.com/shivraaj98/students-report/actions/workflows/verify.yml)
 
 This workflow prepares individual progress messages for a class of **up to 45 students**, using the teacher's homework records, exam results, and concerns. Each message includes the student's name and opens the correct parent's WhatsApp chat with the message prefilled.
 
@@ -43,8 +43,8 @@ The importable workflow is **student-reports.n8n.json**. It uses n8n's built-in 
 Clone the repository if you have not already downloaded it:
 
 ```powershell
-git clone https://github.com/ankucodes10/student-reports-n8n-whatsapp.git
-cd student-reports-n8n-whatsapp
+git clone https://github.com/shivraaj98/students-report.git
+cd students-report
 ```
 
 Use your existing n8n instance, or install Docker Desktop. If installation enables WSL or Virtual Machine Platform, restart Windows first. Open Docker Desktop and wait for its engine to start, then run this from the project folder:
@@ -152,6 +152,29 @@ node scripts/build-report.js
 ```
 
 Open `docs/PROJECT_REPORT.html` and print to PDF, or use `node scripts/build-report.js --pdf` if Chrome or Edge is installed. Report rendering uses Node.js built-in modules and a local browser; it does not upload the report to a document conversion service.
+
+## Push changes from VS Code
+
+Open the project folder in VS Code. The settings in `.vscode/settings.json` enable Git, automatic fetching, GitHub sign-in, and push success notifications.
+
+1. Open **Source Control** with **Ctrl+Shift+G**.
+2. Review the changed files and select **+** to stage the files you want to upload.
+3. Enter a commit message and select **Commit**.
+4. Choose **Push** from the Source Control **...** menu, or select **Sync Changes** to pull and push. Review the sync confirmation before continuing.
+5. If GitHub requests authentication, sign in as **shivraaj98**.
+
+In this configured working copy, `origin` points to `https://github.com/shivraaj98/students-report.git`, and `main` is configured to push there. The original project remote is retained as `upstream`. Commit identity and the preferred GitHub username are stored in this working copy's local Git configuration; passwords and tokens do not belong in workspace settings.
+
+You can also commit and push from VS Code's terminal:
+
+```powershell
+git status
+git add .
+git commit -m "Describe your changes"
+git push
+```
+
+Check the destination with `git remote -v`. If Git tries the wrong GitHub account, run `git credential-manager github login --username shivraaj98` in the terminal, complete sign-in, and retry `git push`. This saves the account in Windows Credential Manager without removing other accounts.
 
 ## Project structure
 
