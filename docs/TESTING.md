@@ -1,6 +1,20 @@
 # Testing and observed results
 
-Validation date: **17 October 2026**. The automated suite and the live run cover different boundaries; neither proves WhatsApp delivery.
+The automated suite and live runs cover different boundaries; neither proves real WhatsApp delivery.
+
+## Docker photo automation: 18 October 2026
+
+Observed result: **65 tests passed; 0 failed; 0 skipped** across the original report engine, browser tool, and 28 new automation checks. The running Docker dashboard passed its health check, and its `last_tick` timestamp confirmed that the published n8n one-minute scheduler reached the authenticated internal API. The temporary HTTPS address returned the public sign-in status and rejected unauthenticated class-record requests with HTTP 401.
+
+The isolated Docker Chromium check passed administrator setup, connection controls, group selection, encrypted vision-key storage, photo upload, extraction review, parent matching, individual approval, activity states, and desktop/mobile layout. Both the cloud service and WhatsApp connector were mocked; no real parent message was sent. Screenshots remain in ignored `.runtime/`.
+
+Additional checks cover exact matching, missing-data handling, source rejection, stale approvals, private-only recipients, consent withdrawal, one-use permission, concurrent dispatch, restart uncertainty, structured image requests, internal webhook gates, and Secure cookies for the configured public HTTPS origin.
+
+Real handwriting accuracy, real group ingestion, and actual private delivery remain to be validated after the teacher links WhatsApp and connects a vision API account. See [Automation guide](AUTOMATION.md) for setup and the exact approval sequence.
+
+## Original CSV workflow: 17 October 2026
+
+The following evidence documents the original workflow before the Docker photo automation was added.
 
 ## Automated verification
 

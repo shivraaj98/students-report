@@ -1,0 +1,118 @@
+{
+  "id": "cbDispatch20261018",
+  "name": "ClassBridge - send one explicitly approved private report",
+  "nodes": [
+    {
+      "id": "trigger-dispatch",
+      "name": "Authenticated event",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "classbridge-dispatch-v1",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "classbridge-dispatch",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "gate-dispatch",
+      "name": "Verify internal event token",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        250,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "token-dispatch",
+              "leftValue": "={{ $json.headers['x-classbridge-token'] }}",
+              "rightValue": "={{ $env.CLASSBRIDGE_INTERNAL_TOKEN }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "action-dispatch",
+      "name": "ClassBridge - send one explicitly approved private report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://automation:8787/internal/dispatch",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-ClassBridge-Token",
+              "value": "={{ $env.CLASSBRIDGE_INTERNAL_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ draft_id: $json.body.draft_id }) }}",
+        "options": {
+          "timeout": 150000
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Authenticated event": {
+      "main": [
+        [
+          {
+            "node": "Verify internal event token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify internal event token": {
+      "main": [
+        [
+          {
+            "node": "ClassBridge - send one explicitly approved private report",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Kathmandu",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false
+  },
+  "active": false,
+  "pinData": {}
+}

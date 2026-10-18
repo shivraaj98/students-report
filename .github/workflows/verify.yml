@@ -25,9 +25,14 @@ jobs:
         run: |
           node scripts/build-workflow.js
           node scripts/build-report.js
+          node scripts/build-automation-workflows.js
       - name: Run automated tests
         run: node --test
       - name: Build the live classroom tool
         run: node scripts/build-web.js
       - name: Confirm generated files match source
-        run: git diff --exit-code -- student-reports.n8n.json examples/report-preview.html docs/PROJECT_REPORT.html
+        run: git diff --exit-code -- student-reports.n8n.json examples/report-preview.html docs/PROJECT_REPORT.html automation/workflows
+      - name: Validate Docker service configuration
+        run: |
+          node scripts/setup-automation.js
+          docker compose --profile share config --quiet

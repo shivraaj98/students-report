@@ -1,0 +1,118 @@
+{
+  "id": "cbIngest20261018",
+  "name": "ClassBridge - extract teacher photo or diary",
+  "nodes": [
+    {
+      "id": "trigger-ingest",
+      "name": "Authenticated event",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "classbridge-ingest-v1",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "classbridge-ingest",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "gate-ingest",
+      "name": "Verify internal event token",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        250,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "token-ingest",
+              "leftValue": "={{ $json.headers['x-classbridge-token'] }}",
+              "rightValue": "={{ $env.CLASSBRIDGE_INTERNAL_TOKEN }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "action-ingest",
+      "name": "ClassBridge - extract teacher photo or diary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://automation:8787/internal/process",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-ClassBridge-Token",
+              "value": "={{ $env.CLASSBRIDGE_INTERNAL_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ source_id: $json.body.source_id }) }}",
+        "options": {
+          "timeout": 150000
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Authenticated event": {
+      "main": [
+        [
+          {
+            "node": "Verify internal event token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify internal event token": {
+      "main": [
+        [
+          {
+            "node": "ClassBridge - extract teacher photo or diary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Kathmandu",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false
+  },
+  "active": false,
+  "pinData": {}
+}

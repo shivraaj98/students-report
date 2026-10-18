@@ -2,13 +2,20 @@
   "name": "class-parent-reports-n8n",
   "version": "1.0.0",
   "private": true,
-  "description": "An n8n workflow for personalised class reports and individual WhatsApp drafts.",
+  "description": "Docker and n8n classroom photo automation with individually approved private WhatsApp reports.",
   "scripts": {
     "build": "node scripts/build-workflow.js",
     "build:report": "node scripts/build-report.js",
     "build:web": "node scripts/build-web.js",
     "start": "node scripts/serve-web.js",
     "test:browser": "node scripts/check-web-browser.js",
+    "automation:setup": "node scripts/setup-automation.js",
+    "automation:build": "node scripts/build-automation-workflows.js",
+    "automation:start": "docker compose up -d --build",
+    "automation:open": "node scripts/open-automation.js",
+    "automation:share": "node scripts/share-automation.js",
+    "automation:stop": "docker compose --profile share stop",
+    "test:automation:browser": "docker compose exec -T automation node browser-check.js",
     "test": "node --test"
   },
   "engines": {

@@ -1,10 +1,36 @@
 # Student reports with ClassBridge, n8n, and WhatsApp
 
-**College project · n8n + JavaScript + CSV · Up to 45 students per batch**
+**Docker + n8n · WhatsApp group ingestion · Cloud photo reading · Individual message approval**
 
 [![Verify project](https://github.com/shivraaj98/students-report/actions/workflows/verify.yml/badge.svg)](https://github.com/shivraaj98/students-report/actions/workflows/verify.yml)
 
-## Use the live tool
+## Automated Docker dashboard: WhatsApp group + photos + n8n
+
+Use the shared teacher dashboard to link a teacher-owned WhatsApp account by QR, select one class group, import available contact numbers, and read diary, homework, concern, test and exam photos using a connected cloud vision account. Upload a class roster once and verify parent matches once. Later teacher posts and site uploads create factual, respectful parent updates without repeatedly typing the records.
+
+**Every private parent message needs fresh teacher approval of its complete text and recipient.** Group membership alone does not establish a student-parent match or permission. The QR connector is unofficial; linking requires acknowledging possible WhatsApp account restrictions. An OpenAI API account with billing/model access is needed for cloud photo reading.
+
+With Docker Desktop running and Node.js 22 or later installed:
+
+```powershell
+npm run automation:setup
+npm run automation:start
+npm run automation:open
+```
+
+Create the administrator password in the browser, then connect WhatsApp, choose the class group, connect the vision account, and upload the roster. The dashboard runs at **http://localhost:8787** and n8n at **http://localhost:5678**. Existing n8n data is preserved; three automation workflows import and publish automatically.
+
+To let teachers sign in and upload from their own devices:
+
+```powershell
+npm run automation:share
+```
+
+This prints a temporary public HTTPS link with teacher login required. Keep this computer and Docker running. The address can change after the tunnel restarts. Add teacher accounts in **Connections**. For initial administrator setup over HTTPS, run `npm run automation:open -- --shared` on this computer.
+
+See the **[automation setup and daily-use guide](docs/AUTOMATION.md)** for parent verification, cloud processing, approval, storage, backups, and verification limits. `npm run test:automation:browser` runs an isolated Docker browser check with fake cloud and WhatsApp services; it sends no real messages.
+
+## Browser-only public tool
 
 **[Open ClassBridge — the live classroom tool](https://students-report-shivraaj98.info828588.chatgpt.site)**
 
@@ -24,6 +50,7 @@ This workflow prepares individual progress messages for a class of **up to 45 st
 
 | File | Purpose |
 | --- | --- |
+| [Automation guide](docs/AUTOMATION.md) | Docker dashboard, QR-linked group, cloud photo reading, teacher logins, and individually approved private sends. |
 | [Live tool guide](docs/LIVE_TOOL.md) | Public classroom tool, parent registration, permission, private messages, and backups. |
 | [Project report (PDF)](docs/PROJECT_REPORT.pdf) | Printable college project report. |
 | [Project report (Markdown)](docs/PROJECT_REPORT.md) | Editable report with clearly marked student and college fields. |
@@ -63,7 +90,8 @@ cd students-report
 Use your existing n8n instance, or install Docker Desktop. If installation enables WSL or Virtual Machine Platform, restart Windows first. Open Docker Desktop and wait for its engine to start, then run this from the project folder:
 
 ```powershell
-docker compose up -d
+npm run automation:setup
+docker compose up -d --build
 ```
 
 Open **http://localhost:5678** and create your local n8n owner account. The supplied Compose file binds the service to this computer and keeps n8n's database in the `n8n_data` Docker volume. It pins n8n 2.43.7. Stop it with `docker compose stop` when finished.

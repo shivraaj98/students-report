@@ -1,0 +1,17 @@
+'use strict';
+const fs = require('node:fs');
+const path = require('node:path');
+const { spawn } = require('node:child_process');
+const contents = fs.readFileSync(path.join(__dirname, '../.env'), 'utf8');
+const token = contents.match(/^CLASSBRIDGE_SETUP_TOKEN=([a-f0-9]{64})$/m)?.[1];
+if (!token) throw new Error('Run node scripts/setup-automation.js first.');
+const shared = process.argv.includes('--shared');
+const origin = shared ? JSON.parse(fs.readFileSync(path.join(__dirname, '../.runtime/automation-share.json'), 'utf8')).url : 'http://localhost:8787';
+if (shared && !/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(origin)) throw new Error('Run npm run automation:share to create a temporary HTTPS link.');
+const url = `${origin}/#setup=${token}`;
+let child;
+if (process.platform === 'win32') child = spawn('powershell.exe', ['-NoProfile', '-Command', 'Start-Process -FilePath ([Console]::In.ReadLine()) -WindowStyle Hidden'], { windowsHide: true, stdio: ['pipe', 'ignore', 'inherit'] });
+else child = spawn(process.platform === 'darwin' ? 'open' : 'xdg-open', [url], { stdio: ['ignore', 'ignore', 'inherit'] });
+if (process.platform === 'win32') child.stdin.end(url + '\n');
+child.on('error', () => { console.error('Could not open a browser. Run this launcher on the machine with your browser.'); process.exitCode = 1; });
+child.on('exit', (code) => { if (code) process.exitCode = code; });

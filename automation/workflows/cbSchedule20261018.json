@@ -1,0 +1,138 @@
+{
+  "id": "cbSchedule20261018",
+  "name": "ClassBridge - recover queued jobs and prepare daily drafts",
+  "nodes": [
+    {
+      "id": "minute-timer",
+      "name": "Recover queued jobs every minute",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "tick",
+      "name": "Process queued documents and approved jobs only",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        350,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://automation:8787/internal/tick",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-ClassBridge-Token",
+              "value": "={{ $env.CLASSBRIDGE_INTERNAL_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
+        "options": {
+          "timeout": 150000
+        }
+      }
+    },
+    {
+      "id": "daily-timer",
+      "name": "Prepare daily drafts at 18:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        250
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 18,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "daily-drafts",
+      "name": "Prepare reports without approving or sending",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        350,
+        250
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://automation:8787/internal/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-ClassBridge-Token",
+              "value": "={{ $env.CLASSBRIDGE_INTERNAL_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
+        "options": {
+          "timeout": 150000
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Recover queued jobs every minute": {
+      "main": [
+        [
+          {
+            "node": "Process queued documents and approved jobs only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare daily drafts at 18:00": {
+      "main": [
+        [
+          {
+            "node": "Prepare reports without approving or sending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Kathmandu",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false
+  },
+  "active": false,
+  "pinData": {}
+}
